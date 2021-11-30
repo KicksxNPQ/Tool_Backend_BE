@@ -18,7 +18,7 @@ router.get('/', async function(req,res,next) {
         //     });
         // }
         // console.log(engimages);
-        const engcaptions = await EnglishCaption.aggregate([
+        const engcaptionstmp = await EnglishCaption.aggregate([
             {
                 "$lookup": {
                     from: 'vietnamesecaptions',
@@ -28,7 +28,6 @@ router.get('/', async function(req,res,next) {
                 },
             },
             // {"$unwind": "$tt"},
-            {"$sort": {"image_id": 1}},
             {
                 $project: 
                     {image_id:1, caption:1, tt:1, 
@@ -42,8 +41,19 @@ router.get('/', async function(req,res,next) {
                     }
                 }
             },
-            {"$limit": 5}
+            { 
+                "$sample": 
+                { 
+                    size: 1 
+                } 
+            }
         ]);
+        if (!engcaptionstmp) {
+            return res.status(200).json({
+                errors: "No caption"
+            })
+        }
+        const engcaptions = await EnglishCaption.find({'image_id': engcaptionstmp[0].image_id}).limit(5).exec();
         const engimages = await EnglishImage.findOne({}, null).where('image_id', engcaptions[0].image_id).exec();
         return res.status(200).json({
             image: engimages,
