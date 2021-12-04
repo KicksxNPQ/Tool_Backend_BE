@@ -26,4 +26,34 @@ router.post('/', async function(req, res, next) {
     return res.status(200).json({status: 1})
 })
 
+
+router.get('/', async function(req,res,next) {
+    try {
+        let imageIdLists = await VietnameseCaption.aggregate([
+            {
+                $group:{
+                    _id: "$image_id",
+                    captions: {
+                        $push: "$$ROOT"
+                    }
+                }
+            },
+            {
+                "$sample": 
+                { 
+                    size: 20 
+                }
+            }
+        ])
+        return res.status(200).json({
+            imageIdLists
+        })
+    }
+    catch(err) {
+        return res.status(200).json({
+            error: err.message
+        })
+    }
+})
+
 module.exports = router;
