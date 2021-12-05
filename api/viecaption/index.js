@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router();
 
-var {VietnameseCaption} = require('../../models')
+var {VietnameseCaption, EnglishImage} = require('../../models')
 
 router.post('/', async function(req, res, next) {
     try {
@@ -45,6 +45,19 @@ router.get('/', async function(req,res,next) {
                 }
             }
         ])
+        const imageUrlList = imageIdLists.map(async (ele) => {
+            return new Promise((resolve, reject) => {
+                EnglishImage.findOne({}, null).where('image_id', ele._id).then(data => {
+                    resolve(data);
+                })
+            }) 
+        })
+        let imageUrl = await Promise.all(imageUrlList);
+        console.log(imageUrl[0].image_id);
+        for (let index = 0; index < imageIdLists.length; index++) {
+            const id = imageUrl.findIndex(ele => ele.image_id === imageIdLists[index]._id);
+            imageIdLists[index].flickr_url = imageUrl[id].flickr_url;
+        }
         return res.status(200).json({
             imageIdLists
         })
